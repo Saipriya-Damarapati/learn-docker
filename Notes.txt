@@ -1,0 +1,222 @@
+1. Use http://localhost:8080/courses to test the application
+2. Create jar from gradle using command: gradle clean build jar
+3. Jar file is generated in build/libs folder
+4. Run the jar using command: java -jar <jar file name> in the terminal
+5. Use http://localhost:8080/courses to test the application
+6. Use http://localhost:8080/actuator to see the actuator endpoints
+
+Creating the docker image manually
+---------------------------------------
+Step 1: docker run -dit openjdk:25-ea-21-jdk-oracle
+            d for detached mode
+            i for interactive mode
+            t for terminal
+
+Cmd prompt after running the above command
+        C:\Users\saipr>docker run -dit openjdk:25-ea-21-jdk-oracle
+        Unable to find image 'openjdk:25-ea-21-jdk-oracle' locally
+        25-ea-21-jdk-oracle: Pulling from library/openjdk
+        2f7be8ad57ba: Pull complete
+        c2eb5d06bfea: Pull complete
+        03e9225792a5: Pull complete
+        Digest: sha256:0649f5464beb0e7fad799dc92747e5b69d3b8a3e99e83cd41cf459c22ae5e9e3
+        Status: Downloaded newer image for openjdk:25-ea-21-jdk-oracle
+        769f2b2fb4678e3739ad0203f83b42e98d49908aff53d85bbf1d2162ebeff905
+
+        This is the container id 769f2b2fb4678e3739ad0203f83b42e98d49908aff53d85bbf1d2162ebeff905
+
+        C:\Users\saipr>docker container ls
+        CONTAINER ID   IMAGE                         COMMAND    CREATED         STATUS         PORTS     NAMES
+        769f2b2fb467   openjdk:25-ea-21-jdk-oracle   "jshell"   5 minutes ago   Up 5 minutes             friendly_varahamihira
+
+Step 2: Copy the generated demo-0.0.1-SNAPSHOT.jar file to the container inside /tmp folder
+        docker cp S:\Study\git_repos\learn-docker\build\libs\demo-0.0.1-SNAPSHOT.jar 769f2b2fb467:/tmp/demo-0.0.1-SNAPSHOT.jar
+Cmd prompt after running the above command
+       C:\Users\saipr>docker cp S:\Study\git_repos\learn-docker\build\libs\demo-0.0.1-SNAPSHOT.jar 769f2b2fb467:/tmp/demo-0.0.1-SNAPSHOT.jar
+       Successfully copied 54MB to 769f2b2fb467:/tmp/demo-0.0.1-SNAPSHOT.jar
+
+Step 3: Execute the ls command to check the jar file is copied or not
+Cmd prompt after running the above command
+        C:\Users\saipr>docker container exec friendly_varahamihira ls /tmp
+               demo-0.0.1-SNAPSHOT.jar
+               hsperfdata_root
+
+Step 4: Create the image using the command
+        docker commit <container id/name> <image name>
+        docker commit friendly_varahamihira learn-docker/courses-api:v1
+Cmd prompt after running the above command
+        C:\Users\saipr>docker commit friendly_varahamihira learn-docker/courses-api:v1
+        sha256:ee30cde1d281f81469114ff680c1a6989720023991a5592bd8078ad62d888445
+
+Step 5: On starting the container, we need our jar to be executed, so add the instruction to run the jar file using the command
+        docker commit --change="CMD [\"java\",\"-jar\",\"/tmp/demo-0.0.1-SNAPSHOT.jar\"]" <container id/name> <image name>
+        docker commit --change="CMD [\"java\",\"-jar\",\"/tmp/demo-0.0.1-SNAPSHOT.jar\"]" friendly_varahamihira learn-docker/courses-api:v2
+Cmd prompt after running the above command
+        C:\Users\saipr>docker container commit --change="CMD [\"java\",\"-jar\",\"/tmp/demo-0.0.1-SNAPSHOT.jar\"]" friendly_varahamihira learn-docker/courses-api:v2
+        sha256:5caf12f0b8e1bf363b63c872587f271b0eeb10eecef49c774e5237fb9947e482
+
+Check: List containers
+C:\Users\saipr>docker container ls
+CONTAINER ID   IMAGE                         COMMAND                  CREATED              STATUS              PORTS     NAMES
+740c0e402ff3   learn-docker/courses-api:v2   "java -jar /tmp/demo…"   About a minute ago   Up About a minute             loving_shirley
+769f2b2fb467   openjdk:25-ea-21-jdk-oracle   "jshell"                 2 hours ago          Up 2 hours                    friendly_varahamihira
+
+Check: Stop container courses-api:v2
+C:\Users\saipr>docker stop loving_shirley
+loving_shirley
+
+Check: List containers
+C:\Users\saipr>docker container ls
+CONTAINER ID   IMAGE                         COMMAND    CREATED       STATUS       PORTS     NAMES
+769f2b2fb467   openjdk:25-ea-21-jdk-oracle   "jshell"   2 hours ago   Up 2 hours             friendly_varahamihira
+
+Check: Stop container friendly_varahamihira
+C:\Users\saipr>docker stop friendly_varahamihira
+friendly_varahamihira
+
+Check: List containers
+C:\Users\saipr>docker container ls
+CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
+
+Check: List images
+C:\Users\saipr>docker images
+REPOSITORY                 TAG                   IMAGE ID       CREATED        SIZE
+learn-docker/courses-api   v2                    5caf12f0b8e1   2 hours ago    997MB
+learn-docker/courses-api   v1                    ee30cde1d281   2 hours ago    997MB
+mysql                      latest                91447968e669   8 days ago     1.26GB
+openjdk                    25-ea-21-jdk-oracle   0649f5464beb   5 months ago   894MB
+
+Check: List all containers
+C:\Users\saipr>docker container ls -a
+CONTAINER ID   IMAGE                         COMMAND                  CREATED         STATUS                       PORTS     NAMES
+740c0e402ff3   learn-docker/courses-api:v2   "java -jar /tmp/demo…"   8 minutes ago   Exited (143) 4 minutes ago             loving_shirley
+769f2b2fb467   openjdk:25-ea-21-jdk-oracle   "jshell"                 2 hours ago     Exited (143) 3 minutes ago             friendly_varahamihira
+
+Check: Remove container friendly_varahamihira
+C:\Users\saipr>docker rm 769f2b2fb467
+769f2b2fb467
+
+Check: List all containers
+C:\Users\saipr>docker container ls -a
+CONTAINER ID   IMAGE                         COMMAND                  CREATED         STATUS                       PORTS     NAMES
+740c0e402ff3   learn-docker/courses-api:v2   "java -jar /tmp/demo…"   9 minutes ago   Exited (143) 4 minutes ago             loving_shirley
+
+Check: Launch container from the image using the port 5000
+C:\Users\saipr>docker run -d -p 5000:5000 learn-docker/courses-api:v2
+7295af5ca8c8a00685a9e5c0518ee124dd6b4674c3d2ffb1725c65820cb84fa7
+
+Check: List all containers
+C:\Users\saipr>docker container ls -a
+CONTAINER ID   IMAGE                         COMMAND                  CREATED          STATUS                       PORTS                                         NAMES
+7295af5ca8c8   learn-docker/courses-api:v2   "java -jar /tmp/demo…"   57 seconds ago   Up 57 seconds                0.0.0.0:5000->5000/tcp, [::]:5000->5000/tcp   adoring_perlman
+740c0e402ff3   learn-docker/courses-api:v2   "java -jar /tmp/demo…"   12 minutes ago   Exited (143) 7 minutes ago                                                 loving_shirley
+
+Check: C:\Users\saipr>docker logs 7295af5ca8c8
+
+         .   ____          _            __ _ _
+        /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+       ( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+        \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+         '  |____| .__|_| |_|_| |_\__, | / / / /
+        =========|_|==============|___/=/_/_/_/
+
+        :: Spring Boot ::                (v3.5.6)
+
+       2025-10-02T15:43:07.797Z  INFO 1 --- [demo] [           main] c.l.d.demo.LearnSpringBootApplication    : Starting LearnSpringBootApplication v0.0.1-SNAPSHOT using Java 25-ea with PID 1 (/tmp/demo-0.0.1-SNAPSHOT.jar started by root in /)
+       2025-10-02T15:43:07.802Z  INFO 1 --- [demo] [           main] c.l.d.demo.LearnSpringBootApplication    : No active profile set, falling back to 1 default profile: "default"
+       2025-10-02T15:43:07.804Z DEBUG 1 --- [demo] [           main] o.s.boot.SpringApplication               : Loading source class com.learn.docker.demo.LearnSpringBootApplication
+
+Check: List all containers
+C:\Users\saipr>docker container ls -a
+CONTAINER ID   IMAGE                         COMMAND                  CREATED          STATUS                        PORTS                                         NAMES
+7295af5ca8c8   learn-docker/courses-api:v2   "java -jar /tmp/demo…"   5 minutes ago    Up 5 minutes                  0.0.0.0:5000->5000/tcp, [::]:5000->5000/tcp   adoring_perlman
+740c0e402ff3   learn-docker/courses-api:v2   "java -jar /tmp/demo…"   16 minutes ago   Exited (143) 12 minutes ago                                                 loving_shirley
+
+Check: Stop the running container
+C:\Users\saipr>docker container stop 7295af5ca8c8
+7295af5ca8c8
+
+Check: List all containers
+C:\Users\saipr>docker container ls -a
+CONTAINER ID   IMAGE                         COMMAND                  CREATED          STATUS                        PORTS     NAMES
+7295af5ca8c8   learn-docker/courses-api:v2   "java -jar /tmp/demo…"   5 minutes ago    Exited (143) 4 seconds ago              adoring_perlman
+740c0e402ff3   learn-docker/courses-api:v2   "java -jar /tmp/demo…"   16 minutes ago   Exited (143) 12 minutes ago             loving_shirley
+
+Check: Remove the stopped containers
+C:\Users\saipr>docker container rm 7295af5ca8c8 740c0e402ff3
+7295af5ca8c8
+740c0e402ff3
+
+Check: List all containers
+C:\Users\saipr>docker container ls -a
+CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
+
+Step 6: Create file Dockerfile in the project root folder with the below content
+        FROM openjdk:25-ea-21-jdk-oracle
+        VOLUME /tmp
+        EXPOSE 5000
+        COPY build/libs/demo-0.0.1-SNAPSHOT.jar /tmp/application.jar
+        CMD ["java","-jar","/tmp/application.jar"]
+
+Port 5000 is later updated to 5005 to avoid conflicts on testing
+
+Logs after building and running the image using dockerfile in gradle
+---------------------------------------------------------------------
+
+00:40:40: Executing 'startDockerContainer'…
+
+> Task :compileJava
+> Task :processResources
+> Task :classes
+> Task :resolveMainClassName
+> Task :bootJar
+> Task :jar
+> Task :assemble
+> Task :compileTestJava
+> Task :processTestResources NO-SOURCE
+> Task :testClasses
+Java HotSpot(TM) 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+2025-10-03T00:40:48.612+05:30  INFO 15232 --- [demo] [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-10-03T00:40:48.616+05:30  INFO 15232 --- [demo] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2025-10-03T00:40:48.616+05:30  INFO 15232 --- [demo] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+> Task :test
+> Task :check
+> Task :build
+> Task :copy
+
+> Task :buildDockerImage
+Building image using context 'S:\Study\git_repos\learn-docker\docker-context'.
+Using Dockerfile 'S:\Study\git_repos\learn-docker\docker-context\Dockerfile'
+Using images 'saipriyadamarapati/courses-api-image:v1'.
+Step 1/5 : FROM openjdk:25-ea-21-jdk-oracle
+ ---> 0649f5464beb
+Step 2/5 : VOLUME /tmp
+ ---> Running in 8d5b82e3ec61
+ ---> Removed intermediate container 8d5b82e3ec61
+ ---> 38c86ba0163b
+Step 3/5 : EXPOSE 5005
+ ---> Running in 85f6450f85e4
+ ---> Removed intermediate container 85f6450f85e4
+ ---> f4ed81502bad
+Step 4/5 : COPY build/libs/demo-0.0.1-SNAPSHOT.jar /tmp/application.jar
+ ---> 6e72a941f64b
+Step 5/5 : CMD ["java","-jar","/tmp/application.jar"]
+ ---> Running in 961a09db74eb
+ ---> Removed intermediate container 961a09db74eb
+ ---> e457ec63eeae
+Successfully built e457ec63eeae
+Successfully tagged saipriyadamarapati/courses-api-image:v1
+Created image with ID 'e457ec63eeae'.
+
+> Task :pushDockerImage
+Pushing image 'saipriyadamarapati/courses-api-image:v1' to https://index.docker.io/v1/.
+
+> Task :createDockerContainer
+Created container with ID 'courses-api-container'.
+
+> Task :startDockerContainer
+Starting container with ID '243e1bdefc0bc9db57aa47c3132b6e4768639cdc056e8adaa06e895dcecafe07'.
+
+BUILD SUCCESSFUL in 46s
+12 actionable tasks: 12 executed
+00:41:27: Execution finished 'startDockerContainer'.
